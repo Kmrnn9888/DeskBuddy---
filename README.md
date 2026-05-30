@@ -31,7 +31,7 @@
 
 ```bash
 # 一行安装
-git clone https://github.com/yourname/file-organizer.git && cd file-organizer && bash install.sh
+git clone https://github.com/Kmrnn9888/DeskBuddy---.git && cd DeskBuddy--- && bash install.sh
 ```
 
 安装完成后访问 **http://localhost:8899** 打开控制面板。
