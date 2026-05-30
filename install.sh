@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
-# File Organizer v4.1 — 一键安装脚本
-# 用法: git clone <repo> && cd file-organizer && bash install.sh
+# DeskBuddy v4.1 — 一键安装脚本
+# 用法: git clone <repo> && cd DeskBuddy--- && bash install.sh
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 APP_DIR="$HOME/.file-organizer"
@@ -10,7 +10,7 @@ WEB_PLIST="$LAUNCHD_DIR/com.fileorganizer.web.plist"
 WATCH_PLIST="$LAUNCHD_DIR/com.fileorganizer.watch.plist"
 
 echo "╔══════════════════════════════════════╗"
-echo "║  File Organizer v4.1                 ║"
+echo "║  DeskBuddy v4.1                      ║"
 echo "║  智能文件管家 — 零操作自动整理         ║"
 echo "╚══════════════════════════════════════╝"
 
@@ -30,15 +30,17 @@ python3 -m pip install --quiet jieba 2>/dev/null || true
 # 3. 部署文件
 echo "[3/6] 部署引擎文件..."
 mkdir -p "$APP_DIR"/{src,data,logs}
+mkdir -p "$APP_DIR/src/templates"
 cp "$SCRIPT_DIR/src/engine.py" "$APP_DIR/src/"
 cp "$SCRIPT_DIR/src/app_web.py" "$APP_DIR/src/"
 cp "$SCRIPT_DIR/src/launcher.py" "$APP_DIR/src/"
+cp "$SCRIPT_DIR/src/templates/index.html" "$APP_DIR/src/templates/" 2>/dev/null || true
 
 # 创建 launchd 入口脚本
 mkdir -p "$HOME/.local/bin"
 cat > "$HOME/.local/bin/file-organizer" << 'PYEOF'
 #!/usr/bin/env python3
-"""File Organizer — launchd 入口"""
+"""DeskBuddy — launchd 入口"""
 import sys, os
 sys.path.insert(0, os.path.expanduser("~/.file-organizer/src"))
 from engine import get_organizer, log
@@ -144,7 +146,7 @@ print('索引构建完成')
 sleep 2
 echo ""
 echo "╔══════════════════════════════════════╗"
-echo "║  ✅ File Organizer v4.1 安装完成      ║"
+echo "║  ✅ DeskBuddy v4.1 安装完成           ║"
 echo "║                                      ║"
 echo "║  🌐 控制面板: http://localhost:8899  ║"
 echo "║  🔍 监控: Desktop + Downloads       ║"

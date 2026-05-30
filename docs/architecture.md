@@ -2,7 +2,7 @@
 
 ## Overview
 
-File Organizer v4 is a local-first macOS file management system with a three-layer architecture:
+DeskBuddy v4.1 is a local-first macOS file management system with a three-layer architecture:
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -36,12 +36,13 @@ File Organizer v4 is a local-first macOS file management system with a three-lay
 
 ## Components
 
-### engine.py (core, ~1100 lines)
+### engine.py (core, ~900 lines)
 
-The entire classification and file operation logic lives here. Key classes:
+The entire classification and file operation logic. Key classes:
 
 | Class | Purpose |
 |-------|---------|
+| `CFG` | Hyperparameter constants — all magic numbers centralized |
 | `SmartOrganizer` | Main orchestrator. Entry point for all operations. |
 | `GlobalIndex` | Scans home directory, builds extension→location and keyword→location maps using TF-IDF. Outputs destination predictions with confidence scores. |
 | `RuleEngine` | Built-in rules + custom rules + feedback learning. Keywords matched against filenames + content to determine target directories. |
@@ -63,14 +64,14 @@ The entire classification and file operation logic lives here. Key classes:
 5. Uncategorized fallback
 ```
 
-Confidence thresholds prevent over-aggressive classification:
+Confidence thresholds (all configurable via `CFG`):
 - Normal files: minimum 25% confidence for index match
 - Non-descriptive names (<4 chars): minimum 55% confidence
 - Deep directories (>3 levels) + low confidence: auto-fallback
 
-### app_web.py (HTTP server, ~700 lines)
+### app_web.py (HTTP server, ~320 lines)
 
-A zero-dependency HTTP server using only `http.server` from stdlib. Single-page application with embedded HTML/CSS/JS. No frameworks.
+A zero-dependency HTTP server using only `http.server` from stdlib. SPA loaded from `templates/index.html`. No frameworks.
 
 API Endpoints:
 - `GET /` — SPA dashboard
@@ -82,16 +83,18 @@ API Endpoints:
 - `GET /trace?q=keyword` — search move history
 - `GET /leftovers` — detect partial-move remnants
 - `GET /health` — self-diagnosis report
+- `GET /export-config` — export settings + rules as JSON
 - `POST /execute` — run preview plan with confirm
 - `POST /undo` — undo last move
 - `POST /undo-all` — undo all unrolled-back moves
 - `POST /learn-folder` — extract rules from folder structure
+- `POST /cleanup-empty-dirs` — remove empty directories
 
-### launcher.py (menu bar app, ~200 lines)
+### launcher.py (menu bar app, ~190 lines)
 
 macOS menu bar application using `rumps`. Features:
 - Status indicator (✅ running / ⚠️ issues)
-- Quick actions: organize, preview, undo, health check
+- Quick actions: organize, preview, undo, cleanup empty dirs, health check
 - Server health monitoring (every 30s)
 - Auto-restart crashed web server
 
@@ -100,7 +103,7 @@ macOS menu bar application using `rumps`. Features:
 Sets up the complete system:
 1. Kills old processes
 2. Installs `jieba` dependency
-3. Copies source files to `~/.file-organizer/src/`
+3. Copies source files + templates to `~/.file-organizer/src/`
 4. Creates launchd plists for WatchPaths monitoring + web server KeepAlive
 5. Loads launchd services
 6. Builds initial global file index
@@ -129,11 +132,21 @@ User sees notification → opens localhost:8899 → reviews → undo if wrong
 System learns from correction → adjusts keyword weights
 ```
 
+## Safety Features (v4.1)
+
+| Feature | Implementation |
+|---------|---------------|
+| fcntl file locking | `_locked_read()` / `_locked_write()` wrappers on all JSON I/O |
+| Path sanitization | `_safe_path()` uses `os.path.realpath()` to prevent traversal |
+| Transactional moves | SHA256 before/after, auto-rollback on mismatch |
+| Safe naming | `extract_clean_name()` strips path separators and UUIDs |
+| Depth limits | `cleanup_leftovers()` capped at 4 levels of os.walk |
+
 ## Design Decisions
 
-**Why no database?** — JSON files are sufficient for the data volume (config, rules, index, journal). Zero setup burden.
+**Why no database?** — JSON files are sufficient for the data volume (config, rules, index, journal). Zero setup burden. fcntl locking prevents corruption.
 
-**Why no web framework?** — `http.server` from stdlib avoids dependency hell. The SPA is a single embedded string.
+**Why no web framework?** — `http.server` from stdlib avoids dependency hell. HTML now in separate `templates/index.html`.
 
 **Why jieba?** — Best Chinese tokenization library with zero external dependencies. Falls back to regex bigram if not installed.
 

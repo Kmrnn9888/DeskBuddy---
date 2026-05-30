@@ -1,10 +1,11 @@
-# File Organizer
+# DeskBuddy
 
 > 智能文件管家 — 桌面和下载文件夹永远不会乱。零操作，全自动，完全本地。
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Python 3.9+](https://img.shields.io/badge/Python-3.9%2B-blue)](https://python.org)
 [![Platform: macOS](https://img.shields.io/badge/Platform-macOS-lightgrey)]()
+[![Version](https://img.shields.io/badge/Version-4.1-blue)]()
 
 <p align="center">
   <img src="screenshots/dashboard.png" alt="Dashboard" width="800">
@@ -16,7 +17,7 @@
 
 你下载文件、保存截图、接收文档。它们堆积在桌面和下载文件夹里。
 
-**File Organizer** 是一个后台运行的 macOS 智能管家：
+**DeskBuddy** 是一个后台运行的 macOS 智能管家：
 
 - 📥 文件变更后 **60 秒自动整理**，你什么都不用做
 - 🧠 读取文件内容 + 全盘学习你的文件夹习惯，**越用越准**
@@ -38,6 +39,22 @@ git clone https://github.com/Kmrnn9888/DeskBuddy---.git && cd DeskBuddy--- && ba
 
 ---
 
+## v4.1 更新日志
+
+| 修复/改进 | 说明 |
+|-----------|------|
+| 🐛 修复导入错误 | `engine_v4` → `engine`，Web 面板可正常启动 |
+| 🔒 fcntl 文件锁 | 所有 JSON 读写加排他锁，防止并发损坏 |
+| 📐 超参常量化 | 30+ 魔数统一到 `CFG` 类，可调参 |
+| 🧹 空目录清理 | 新增 `cleanup_empty_dirs()`，整理后自动清扫 |
+| 🛡 路径安全 | `os.path.realpath()` 规范化，防遍历攻击 |
+| 📝 异常日志 | 所有 `except: pass` 改为 `log.debug` 记录 |
+| 🎨 HTML 剥离 | SPA 模板独立为 `templates/index.html` |
+| 🔌 配置导入/导出 | Web UI 支持一键备份恢复配置 |
+| 📋 学习文件夹 UI | Web 面板直接输入路径学习 |
+
+---
+
 ## 功能矩阵
 
 | 层级 | 功能 | 说明 |
@@ -56,9 +73,11 @@ git clone https://github.com/Kmrnn9888/DeskBuddy---.git && cd DeskBuddy--- && ba
 - **全局文件索引** — 扫描整个 Home 目录，学习 "什么文件通常放在哪里"
 - **四档热度分级** — Hot (7天) / Warm (30天) / Cold (90天) / Frozen
 - **SHA256 校验** — 移动前后校验文件完整性，失败自动回滚
+- **fcntl 文件锁** — 并发写保护，数据不损坏
 - **文件夹级分派** — 自动识别项目文件夹并整体搬迁到合适位置
 - **深度惩罚** — 避免把普通文件误放到过深的子目录
 - **残留检测** — 发现并合并部分移动后留下的目录碎片
+- **空目录清理** — 整理后自动清扫留下的空文件夹
 
 ---
 
@@ -93,16 +112,18 @@ git clone https://github.com/Kmrnn9888/DeskBuddy---.git && cd DeskBuddy--- && ba
 ## 项目结构
 
 ```
-file-organizer/
+DeskBuddy---/
 ├── src/
-│   ├── engine.py       # 核心引擎（分类/索引/事务/撤销/自愈）
-│   ├── app_web.py      # Web 控制面板（Flask-free, 纯 stdlib）
-│   └── launcher.py     # macOS 菜单栏应用
-├── install.sh           # 一键安装脚本
+│   ├── engine.py            # 核心引擎（分类/索引/事务/撤销/自愈）
+│   ├── app_web.py           # Web 控制面板（Flask-free, 纯 stdlib）
+│   ├── launcher.py          # macOS 菜单栏应用
+│   └── templates/
+│       └── index.html       # SPA 前端模板
+├── install.sh               # 一键安装脚本
 ├── docs/
-│   └── architecture.md  # 架构设计文档
+│   └── architecture.md      # 架构设计文档
 ├── screenshots/
-│   └── dashboard.png    # 控制面板截图
+│   └── dashboard.png        # 控制面板截图
 ├── LICENSE
 └── README.md
 ```
@@ -138,6 +159,14 @@ python3 ~/.file-organizer/src/engine.py
 
 ---
 
+## 配置导入/导出
+
+控制面板 → 设置 → 导出配置 → 下载 JSON 文件
+
+换机器后：设置 → 导入配置 → 选择 JSON 文件，一键恢复所有规则和设置。
+
+---
+
 ## 安全承诺
 
 - ✅ **不删除文件** — 只移动和重命名
@@ -145,6 +174,7 @@ python3 ~/.file-organizer/src/engine.py
 - ✅ **不上传数据** — 100% 本地运行
 - ✅ **事务性移动** — SHA256 校验，失败自动回滚
 - ✅ **完整撤销** — 每次移动都可撤回
+- ✅ **文件锁保护** — fcntl 防并发写损坏
 
 ---
 
@@ -153,7 +183,7 @@ python3 ~/.file-organizer/src/engine.py
 如果你的某个文件夹组织得很好（比如 `Kamran/` 下有 `博物馆/`、`Assignment/` 等子目录），系统可以自动学习：
 
 ```
-控制面板 → 规则 → 学习文件夹 → 输入路径
+控制面板 → 规则 → 输入路径 → 点击「学习文件夹结构」
 ```
 
 系统会提取每个子目录的关键词，注册为自动分类规则。
